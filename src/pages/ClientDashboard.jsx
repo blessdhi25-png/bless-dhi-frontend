@@ -4,6 +4,10 @@ import React, {
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
+const API_BASE = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL
+  : 'http://localhost:5000';
+
 const C = {
   navy:   '#0d1b3e', blue:   '#1a237e',
   sky:    '#4a7ff7', green:  '#2e7d32',
@@ -639,7 +643,7 @@ export default function ClientDashboard() {
                   <div key={m.id} style={{borderRadius:8,overflow:'hidden',background:'#1a1a2e'}}>
                     {m.file_type === 'image' ? (
                       <img
-                        src={`http://localhost:5000${m.file_path}`}
+                        src={`${API_BASE}${m.file_path}`}
                         alt="media"
                         style={{width:'100%',height:120,objectFit:'cover'}}
                         onError={e => { e.target.parentNode.style.display='none'; }}

@@ -4,6 +4,10 @@ import React, {
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
+const API_BASE = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL
+  : 'http://localhost:5000';
+
 const C = {
   navy:'#0d1b3e', blue:'#1a237e', accent:'#2348c0',
   sky:'#4a7ff7',  green:'#2e7d32', gold:'#c9a84c',
@@ -784,7 +788,7 @@ export default function ManagerDashboard() {
             {media.map(m => (
               <div key={m.id} style={{...css.card,padding:0,overflow:'hidden'}}>
                 {m.file_type==='image' ? (
-                  <img src={`http://localhost:5000${m.file_path}`} alt="media"
+                  <img src={`${API_BASE}${m.file_path}`} alt="media"
                     style={{width:'100%',height:150,objectFit:'cover'}}
                     onError={e => {e.target.style.display='none';}} />
                 ) : (
