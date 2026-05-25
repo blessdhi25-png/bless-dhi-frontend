@@ -137,15 +137,20 @@ const S = {
 function StepBar({ step }) {
   return (
     <div style={S.stepRow}>
-      <span style={S.step(step === 'form', false)}>1 Details</span>
-      <span style={S.arrow}>›</span>
-      <span style={S.step(step === 'verify_email', step === 'verify_phone' || step === 'complete')}>
-        2 Email
+      <span style={S.step(step === 'form', false)}>
+        1 Details
       </span>
       <span style={S.arrow}>›</span>
-      <span style={S.step(step === 'verify_phone', step === 'complete')}>3 Phone</span>
+      <span style={S.step(
+        step === 'verify_email',
+        step === 'complete'
+      )}>
+        2 Verify Email
+      </span>
       <span style={S.arrow}>›</span>
-      <span style={S.step(step === 'complete', false)}>4 Done</span>
+      <span style={S.step(step === 'complete', false)}>
+        3 Done
+      </span>
     </div>
   );
 }
@@ -352,13 +357,15 @@ export default function Register() {
   };
 
   const handleVerifySuccess = data => {
-    if (data.step === 'verify_phone') {
-      setStep('verify_phone');
-    } else if (data.step === 'complete') {
-      setStep('complete');
-      setTimeout(() => navigate('/login'), 2500);
-    }
-  };
+  // Email verification now completes the account
+  if (data.step === 'complete') {
+    setStep('complete');
+    setTimeout(() => navigate('/login'), 2500);
+  } else if (data.step === 'verify_phone') {
+    // Keep phone step if AT live is configured
+    setStep('verify_phone');
+  }
+};
 
   const focused = useRef('');
   const [foc, setFoc] = useState('');
