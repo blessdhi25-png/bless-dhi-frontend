@@ -788,7 +788,7 @@ export default function ManagerDashboard() {
             {media.map(m => (
               <div key={m.id} style={{...css.card,padding:0,overflow:'hidden'}}>
                 {m.file_type==='image' ? (
-                  <img src={`${API_BASE}${m.file_path}`} alt="media"
+                  <img src={m.file_path} alt="media"
                     style={{width:'100%',height:150,objectFit:'cover'}}
                     onError={e => {e.target.style.display='none';}} />
                 ) : (

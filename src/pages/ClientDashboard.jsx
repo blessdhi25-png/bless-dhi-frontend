@@ -643,7 +643,7 @@ export default function ClientDashboard() {
                   <div key={m.id} style={{borderRadius:8,overflow:'hidden',background:'#1a1a2e'}}>
                     {m.file_type === 'image' ? (
                       <img
-                        src={`${API_BASE}${m.file_path}`}
+                        src={m.file_path}
                         alt="media"
                         style={{width:'100%',height:120,objectFit:'cover'}}
                         onError={e => { e.target.parentNode.style.display='none'; }}
