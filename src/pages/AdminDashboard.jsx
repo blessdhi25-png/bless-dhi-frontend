@@ -295,6 +295,7 @@ const NAV = [
   { id:'users',     label:'Users',      letter:'U' },
   { id:'hostels',   label:'Hostels',    letter:'H' },
   { id:'bookings',  label:'Bookings',   letter:'B' },
+  { id:'profile',   label:'My Profile', letter:'P' },
 ];
 
 // ─────────────────────────────────────────────────
