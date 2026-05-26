@@ -313,6 +313,7 @@ export default function AdminDashboard() {
   const [bookings, setBookings] = useState([]);
   const [toast, setToast]     = useState({msg:'',type:''});
   const [confirm, setConfirm] = useState(null);
+  const [profile, setProfile] = useState(null);
 
   // Filters
   const [userSearch, setUserSearch]   = useState('');
@@ -368,11 +369,19 @@ export default function AdminDashboard() {
     } catch {}
   }, [bookingTab]);
 
+  const fetchProfile = useCallback(async () => {
+  try {
+    const { data } = await api.get('/admin/profile');
+    setProfile(data.admin);
+  } catch {}
+}, []);
+
   useEffect(() => {
     if (page === 'dashboard') fetchStats();
     if (page === 'users')     fetchUsers();
     if (page === 'hostels')   fetchHostels();
     if (page === 'bookings')  fetchBookings();
+    if (page === 'profile')   fetchProfile();
   }, [page]);
 
   useEffect(() => {
@@ -710,7 +719,7 @@ export default function AdminDashboard() {
               onChange={e => setForm(p => ({
                 ...p, username: e.target.value
               }))}
-              placeholder="johndoe" />
+              placeholder="blessdhi" />
           </div>
         </div>
 
@@ -721,7 +730,7 @@ export default function AdminDashboard() {
             onChange={e => setForm(p => ({
               ...p, email: e.target.value
             }))}
-            placeholder="john@email.com" />
+            placeholder="blessdhi@email.com" />
         </div>
 
         <div style={css.twoCol}>
@@ -1191,6 +1200,315 @@ export default function AdminDashboard() {
     </div>
   );
 
+const ProfilePage = () => {
+  const [form, setForm] = useState({
+    currentPassword: '',
+    newPassword:     '',
+    confirmPassword: '',
+  });
+  const [err,      setErr]      = useState('');
+  const [success,  setSuccess]  = useState('');
+  const [saving,   setSaving]   = useState(false);
+  const [showPw,   setShowPw]   = useState(false);
+  const [loading,  setLoading]  = useState(true);
+  const [adminData,setAdminData]= useState(null);
+
+  // Fetch profile directly inside component
+  useEffect(() => {
+    api.get('/admin/profile')
+      .then(({ data }) => {
+        setAdminData(data.admin);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Profile fetch error:', err);
+        setLoading(false);
+      });
+  }, []);
+
+  const handleChange = e =>
+    setForm(p => ({ ...p, [e.target.name]: e.target.value }));
+
+  const submit = async () => {
+    setErr(''); setSuccess('');
+    if (!form.currentPassword ||
+        !form.newPassword ||
+        !form.confirmPassword) {
+      setErr('All fields are required.'); return;
+    }
+    if (form.newPassword.length < 6) {
+      setErr('New password must be at least 6 characters.'); return;
+    }
+    if (form.newPassword !== form.confirmPassword) {
+      setErr('New passwords do not match.'); return;
+    }
+    setSaving(true);
+    try {
+      const { data } = await api.put('/admin/profile/password', form);
+      setSuccess(data.message);
+      setForm({
+        currentPassword: '',
+        newPassword:     '',
+        confirmPassword: '',
+      });
+      showToast('Password changed successfully!');
+    } catch (e) {
+      setErr(e.response?.data?.error || 'Failed to change password.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center',
+        justifyContent: 'center', height: 300,
+        fontSize: 14, color: C.gray,
+      }}>
+        Loading profile...
+      </div>
+    );
+  }
+
+  const displayName = adminData?.full_name || user?.fullName || 'Admin';
+  const displayEmail = adminData?.email || '—';
+  const displayUsername = adminData?.username || user?.username || 'admin';
+
+  return (
+    <div>
+      <div style={css.topbar}>
+        <div>
+          <div style={css.pageTitle}>My Profile</div>
+          <div style={css.pageSub}>Manage your admin account</div>
+        </div>
+      </div>
+
+      <div style={{
+        display:'grid', gridTemplateColumns:'1fr 1fr', gap:24,
+      }}>
+        {/* Account Info */}
+        <div style={css.card}>
+          <div style={{
+            fontSize:15, fontWeight:700, color:C.dark,
+            marginBottom:20, paddingBottom:12,
+            borderBottom:`1px solid ${C.border}`,
+          }}>
+            Account Information
+          </div>
+
+          <div style={{
+            display:'flex', alignItems:'center',
+            gap:16, marginBottom:24,
+          }}>
+            <div style={{
+              width:64, height:64,
+              background:'linear-gradient(135deg,#c9a84c,#e8c96a)',
+              borderRadius:'50%',
+              display:'flex', alignItems:'center',
+              justifyContent:'center',
+              fontFamily:'Georgia,serif',
+              fontWeight:900, fontSize:26, color:'#0d1b3e',
+            }}>
+              {displayName[0]?.toUpperCase() || 'A'}
+            </div>
+            <div>
+              <div style={{
+                fontSize:18, fontWeight:700, color:C.dark,
+              }}>
+                {displayName}
+              </div>
+              <div style={{
+                fontSize:12, color:C.gray, marginTop:2,
+              }}>
+                {displayEmail}
+              </div>
+              <span style={{
+                ...css.badge('approved'),
+                fontSize:10, marginTop:4, display:'inline-block',
+              }}>
+                Administrator
+              </span>
+            </div>
+          </div>
+
+          {[
+            { label:'Username',     value: displayUsername },
+            { label:'Email',        value: displayEmail },
+            { label:'Role',         value: 'System Administrator' },
+            { label:'Member Since', value: adminData?.created_at
+                ? new Date(adminData.created_at).toLocaleDateString()
+                : '—' },
+          ].map(item => (
+            <div key={item.label} style={{
+              display:'flex', justifyContent:'space-between',
+              alignItems:'center',
+              padding:'11px 0',
+              borderBottom:`1px solid ${C.border}`,
+            }}>
+              <span style={{
+                fontSize:12, color:C.gray, fontWeight:600,
+              }}>
+                {item.label}
+              </span>
+              <span style={{
+                fontSize:13, color:C.dark, fontWeight:500,
+              }}>
+                {item.value}
+              </span>
+            </div>
+          ))}
+
+          <div style={{
+            marginTop:20,
+            background:'#fff8e1',
+            border:'1px solid #ffe082',
+            borderRadius:10,
+            padding:'12px 16px',
+            fontSize:12, color:'#e65100', lineHeight:1.6,
+          }}>
+            <strong>Security reminder:</strong> If you haven't
+            changed the default password <strong>admin123</strong>,
+            please do so immediately using the form on the right.
+          </div>
+        </div>
+
+        {/* Change Password */}
+        <div style={css.card}>
+          <div style={{
+            fontSize:15, fontWeight:700, color:C.dark,
+            marginBottom:20, paddingBottom:12,
+            borderBottom:`1px solid ${C.border}`,
+          }}>
+            Change Password
+          </div>
+
+          {err && (
+            <div style={{
+              background:'#ffebee', border:'1px solid #ef9a9a',
+              borderRadius:8, color:C.danger,
+              fontSize:12, padding:'10px 14px', marginBottom:16,
+            }}>
+              {err}
+            </div>
+          )}
+          {success && (
+            <div style={{
+              background:'#e8f5e9', border:'1px solid #a5d6a7',
+              borderRadius:8, color:C.green,
+              fontSize:12, padding:'10px 14px', marginBottom:16,
+            }}>
+              {success}
+            </div>
+          )}
+
+          <div style={css.formRow}>
+            <label style={css.label}>Current Password *</label>
+            <input style={css.input}
+              type={showPw ? 'text' : 'password'}
+              name="currentPassword"
+              value={form.currentPassword}
+              onChange={handleChange}
+              placeholder="Enter current password" />
+          </div>
+
+          <div style={css.formRow}>
+            <label style={css.label}>New Password *</label>
+            <input style={css.input}
+              type={showPw ? 'text' : 'password'}
+              name="newPassword"
+              value={form.newPassword}
+              onChange={handleChange}
+              placeholder="Minimum 6 characters" />
+          </div>
+
+          <div style={css.formRow}>
+            <label style={css.label}>Confirm New Password *</label>
+            <input style={css.input}
+              type={showPw ? 'text' : 'password'}
+              name="confirmPassword"
+              value={form.confirmPassword}
+              onChange={handleChange}
+              placeholder="Re-enter new password" />
+          </div>
+
+          <div style={{
+            display:'flex', alignItems:'center',
+            gap:8, marginBottom:18,
+          }}>
+            <input type="checkbox" id="showpw"
+              checked={showPw}
+              onChange={e => setShowPw(e.target.checked)}
+              style={{ cursor:'pointer' }} />
+            <label htmlFor="showpw" style={{
+              fontSize:12, color:C.gray, cursor:'pointer',
+            }}>
+              Show passwords
+            </label>
+          </div>
+
+          {/* Strength indicator */}
+          {form.newPassword && (
+            <div style={{ marginBottom:16 }}>
+              <div style={{
+                fontSize:11, color:C.gray,
+                marginBottom:6, fontWeight:600,
+              }}>
+                Password Strength
+              </div>
+              <div style={{
+                height:4, borderRadius:2,
+                background:'#f1f5f9', overflow:'hidden',
+              }}>
+                <div style={{
+                  height:'100%', borderRadius:2,
+                  transition:'width 0.3s, background 0.3s',
+                  width: form.newPassword.length >= 12 ? '100%'
+                       : form.newPassword.length >= 8  ? '66%'
+                       : form.newPassword.length >= 6  ? '33%'
+                       : '10%',
+                  background: form.newPassword.length >= 12 ? C.green
+                            : form.newPassword.length >= 8  ? C.gold
+                            : C.danger,
+                }} />
+              </div>
+              <div style={{
+                fontSize:10, marginTop:4, fontWeight:600,
+                color: form.newPassword.length >= 12 ? C.green
+                     : form.newPassword.length >= 8  ? '#e65100'
+                     : C.danger,
+              }}>
+                {form.newPassword.length >= 12 ? '✓ Strong'
+               : form.newPassword.length >= 8  ? '~ Medium'
+               : form.newPassword.length >= 6  ? '! Weak'
+               : '✕ Too short'}
+              </div>
+            </div>
+          )}
+
+          <button
+            style={{
+              ...css.btn(C.blue),
+              width:'100%', padding:13,
+              fontSize:14, opacity: saving ? 0.7 : 1,
+            }}
+            onClick={submit} disabled={saving}>
+            {saving ? 'Changing Password...' : 'Change Password'}
+          </button>
+
+          <div style={{
+            marginTop:14, fontSize:11, color:C.gray,
+            lineHeight:1.6, textAlign:'center',
+          }}>
+            After changing your password you will stay
+            logged in for your current session.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
   // ─────────────────────────────────────────────────
   //  RENDER
   // ─────────────────────────────────────────────────
@@ -1199,6 +1517,7 @@ export default function AdminDashboard() {
     users:     <UsersPage />,
     hostels:   <HostelsPage />,
     bookings:  <BookingsPage />,
+    profile:   <ProfilePage />,
   };
 
   return (
